@@ -1,0 +1,5 @@
+{
+  "BaseUrl": "https://YOUR_OMNITRACKER_SERVER/odata",
+  "Username": "YOUR_USERNAME",
+  "Password": "YOUR_PASSWORD"
+}
