@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket erstellen</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --primary: #0d6a8a;
+      --primary-hover: #0a5670;
+      --text: #12222b;
+      --muted: #5b6a72;
+      --border: #cfd8df;
+      --ok: #1f8b4c;
+      --error: #ba2d2d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top left, #e7f0f6 0%, var(--bg) 60%);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(100%, 700px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 10px 28px rgba(15, 45, 58, 0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 1.5rem;
+    }
+
+    p {
+      margin-top: 0;
+      color: var(--muted);
+    }
+
+    form {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      padding: 11px 16px;
+      cursor: pointer;
+      transition: background 120ms ease;
+      justify-self: start;
+    }
+
+    button:hover {
+      background: var(--primary-hover);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-weight: 600;
+      min-height: 1.2em;
+    }
+
+    .status.ok {
+      color: var(--ok);
+    }
+
+    .status.error {
+      color: var(--error);
+    }
+
+    .hint {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Ticket über REST API erstellen</h1>
+    <p>Fülle die Felder aus und sende das Ticket an den OMNITRACKER-Endpunkt.</p>
+
+    <form id="ticketForm">
+      <label>
+        Titel
+        <input type="text" id="title" name="title" required maxlength="200" placeholder="Kurzer Titel des Tickets">
+      </label>
+
+      <label>
+        Beschreibung
+        <textarea id="description" name="description" required placeholder="Detaillierte Beschreibung"></textarea>
+      </label>
+
+      <label>
+        Betroffene Person (E-Mail)
+        <input type="email" id="email" name="email" required placeholder="name@firma.de">
+      </label>
+
+      <button type="submit" id="submitBtn">Ticket absenden</button>
+    </form>
+
+    <div id="status" class="status" aria-live="polite"></div>
+    <div class="hint">
+      Hinweis: Die genaue Resource (z. B. /tickets) und Feldnamen können je nach API-Schema variieren.
+    </div>
+  </main>
+
+  <script>
+    const API_URL = "https://delfns0334.emea.ads.local/OTWsrest/rest";
+
+    const form = document.getElementById("ticketForm");
+    const statusEl = document.getElementById("status");
+    const submitBtn = document.getElementById("submitBtn");
+
+    function setStatus(message, type) {
+      statusEl.textContent = message;
+      statusEl.className = "status" + (type ? " " + type : "");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const payload = {
+        title: form.title.value.trim(),
+        description: form.description.value.trim(),
+        affectedPersonEmail: form.email.value.trim()
+      };
+
+      setStatus("Sende Ticket...", "");
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          throw new Error(responseText || "Unbekannter Fehler");
+        }
+
+        try {
+          const data = JSON.parse(responseText);
+          if (data.ticketNr) {
+            setStatus("Ticket wurde erfolgreich erstellt. Ticketnummer: " + data.ticketNr, "ok");
+          } else {
+            setStatus("Ticket wurde erfolgreich erstellt.", "ok");
+          }
+        } catch (e) {
+          setStatus("Ticket wurde erfolgreich erstellt.", "ok");
+        }
+        form.reset();
+      } catch (error) {
+        setStatus("Fehler beim Erstellen: " + error.message, "error");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
