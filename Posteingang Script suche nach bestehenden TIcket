@@ -1,0 +1,219 @@
+Option Explicit
+
+Const bolLogging = False
+
+If bolLogging Then LogMessage "After Creation: Check subject line if there is an existing ticket in the database"
+
+'Check the Email attributes SenderAddress and ReplyToAddress for any known email-addresses in the customer database
+Dim strSubject, arrTicket
+
+strSubject = ActiveRequest.Fields("Subject").Value
+Dim strTicketProcess
+arrTicket = GetTicket(strSubject, strTicketProcess)
+
+If arrTicket(0) Then
+    If bolLogging Then LogMessage ActiveSession.GetSystemParameter("ITSM_Global_Constants_and_Variables", "STR_Text_ReftoexistingTicket")
+
+    Dim objRequest
+    Set objRequest = ActiveSession.GetRequestByUniqueId(arrTicket(1))
+
+    FillTicketWithInformation objRequest, strTicketProcess
+
+    If arrTicket(0) > 1 Then
+	Dim secs, strMultiple
+	strMultiple = ActiveSession.GetSystemParameter("ITSM_Global_Constants_and_Variables", "STR_Text_FoundMultipleTickets")
+
+	Set secs = objRequest.Fields("Answers").TValue
+	secs.Add objRequest.Application.ConvertPlainToFormattedText(strMultiple)
+	Set objRequest.Fields("Answers").TValue = secs
+    End If
+
+    objRequest.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+    
+   '05.07.2018 by schraut, requested by Rehwald : information mail if target already closed
+    If strTicketProcess = "I" Or strTicketProcess = "SR" Or strTicketProcess = "C" Then
+	Set objRequest = ActiveSession.GetRequestByUniqueId(objRequest.UniqueId)
+	Dim strStateAlias
+	strStateAlias = ""
+	If objRequest.Fields("State").Value <> "" Then	    
+	    strStateAlias = objRequest.Fields("State").TValue.alias
+	End If
+	If strStateAlias = "Closed" Or strStateAlias = "Rejected" Then
+	    Dim objOEmail
+	    Set objOEmail = ActiveRequest.GenerateEmail("ReplyTicketClosed")'Ex("ReplyTicketClosed", 0)'1) 'AsEmail
+	    if false then
+	    Dim objReplyEmail
+	    Set objReplyEmail = objOEmail.Reply(True, True)
+	    objReplyEmail.PlainTextBody = "Danke für Ihre Email." & vbCrLf & "Leider ist das zugehörige Ticket bereits abgeschlossen/abgewiesen und Ihre Email kann somit leider nicht mehr berücksichtigt werden!" & _
+ vbCrLf & "/" & vbCrLf & "Thanks for your Email! Unfortunal the associated ticket is already closed/rejected and you email will no be taken into account!" & vbCrLf & vbCrLf & objReplyEmail.PlainTextBody
+    	    end if 
+    	    objOEmail.send
+    	    Dim objreplyobj, objmails2
+     	    Set objReplyObj = objoEmail.loggedemail
+     	    Set objMails2 = objRequest.Fields("RelatedEmails").TValue
+     	    objMails2.Prefetch()
+     	    objMails2.AddExisting objReplyObj
+	    Set objRequest.Fields("RelatedEmails").TValue = objmails2
+	    objRequest.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+	ElseIf strStateAlias = "Solved" And strTicketProcess = "I" Then
+	    on error resume next
+	    objRequest.Fields("State").Value = "In progress"
+	     objRequest.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+	ElseIf strStateAlias = "Solved" And strTicketProcess = "SR" Then
+	    On Error Resume Next
+	    If objRequest.Fields("AffectedService").isnull then
+	    	objRequest.Fields("State").Value = "In progress"
+		objRequest.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+	    ElseIf objRequest.Fields("AffectedService").TValue.Fields("RequestType").Value = "" Then
+		objRequest.Fields("State").Value = "In progress"
+		objRequest.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+	    ElseIf objRequest.Fields("AffectedService").TValue.Fields("RequestType").TValue.alias <> "AccessManagement" Then
+		objRequest.Fields("State").Value = "In progress"
+		objRequest.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+	    End If
+	ElseIf strStateAlias = "Solved" And strTicketProcess = "C" Then
+	    On Error Resume Next
+	    
+	    If Not objRequest.Fields("MainTicket").IsNull Then
+		Dim objMTi, strMTiFolderAlias		
+		Set objMTi = objRequest.Fields("MainTicket").TValue
+		strMTiFolderAlias = objMTi.RequestFolder.alias
+    	    	If strMTiFolderAlias = "Incidents" Then
+		    On Error Resume Next
+		    objMTi.Fields("State").Value = "In progress"
+		    objMTi.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+
+		ElseIf strMTiFolderAlias = "RequestFulfillment" Then
+		    On Error Resume Next
+		    If objMTi.Fields("AffectedService").IsNull Then
+			objMTi.Fields("State").Value = "In progress"
+			objMTi.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+		    ElseIf objMTi.Fields("AffectedService").TValue.Fields("RequestType").Value = "" Then
+			objMTi.Fields("State").Value = "In progress"
+			objMTi.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+		    ElseIf objMTi.Fields("AffectedService").TValue.Fields("RequestType").TValue.alias <> "AccessManagement" Then
+			objMTi.Fields("State").Value = "In progress"
+			objMTi.SaveEx 7 + 256 'no permissions, no privileges, do not validate input
+	    	    End If
+		End If
+		
+	    End If
+	    
+	End If
+	
+    End If
+    
+End If
+'****************************************************************
+'╔═══════════════════════════════════════════════════════════════════════════════
+'║ @summary:       filling the activeRequest with information
+'║ @last_change:   2014-08-06
+'║ @param objreq:  
+'╚═══════════════════════════════════════════════════════════════════════════════
+
+Sub FillTicketWithInformation(objReq, strTicketProcess)
+
+    Dim objMails
+
+    If arrTicket(0) <> 0 Then 'only when a related ticket was found
+	Set objMails = objReq.Fields("RelatedEmails").TValue
+	objMails.Prefetch()
+	objMails.AddExisting ActiveRequest
+	Set objReq.Fields("RelatedEmails").TValue = objMails
+	If strTicketProcess = "C" Then 'CallTicket 'SREQ-61508
+if false then	    
+	    If Not objReq.Fields("MainTicket").IsNull Then
+		Dim objMT
+		Set objMT = objReq.Fields("MainTicket").TValue
+		Set objMails = objMT.Fields("RelatedEmails").TValue
+		objMails.Prefetch()
+		objMails.AddExisting ActiveRequest
+		Set objMT.Fields("RelatedEmails").TValue = objMails
+		objMT.Saveex 7 + 256
+	    End If
+End If
+    
+	End If
+	
+    End If
+End Sub 'FillTicketWithInformation
+'*****************************************************************
+'╔═══════════════════════════════════════════════════════════════════════════════
+'║ @summary:           Get Ticket with the subject line and search for the number
+'║ @last_change:       2014-08-06
+'║ @param strsubject:  ActiveRequest.Fields("Subject").Value
+'║ @returns:           found ticket with the number in the subject
+'╚═══════════════════════════════════════════════════════════════════════════════
+
+Function GetTicket(strSubject, byRef strTicketProcess)
+
+    If bolLogging Then LogMessage "GetTicket " & strSubject
+
+    Dim bolRecursive
+    Dim intCount, intOutput, strPattern, strIncident, strProblem, strChange, strUCT, strSR, strCall
+    Dim regEx, Match, Matches, regExIncident, regExProblem, regExChange, regExUCT, regExServiceRequest, regExCall', strTicketProcess
+    Dim bolError: bolError = False
+
+    intCount = 0
+    intOutput = 0
+
+    strPattern = "#Ticket (I|P|RFC|X|SR|SUB|C)-([0-9]+)#"
+
+    'Search for Ticketnumber in Subject line...
+    Set regEx = New RegExp
+    regEx.Pattern = CStr(strPattern)
+    regEx.IgnoreCase = True
+    bolRecursive = False
+    If regEx.Test(strSubject) Then
+	Dim strNumber, objFolder, objFilter
+	Set Matches = regEx.Execute(strSubject)
+	Set Match = Matches(0)
+	strTicketProcess = Match.SubMatches(0) 'String "I"
+	strNumber = Match.SubMatches(1) 'The Number 
+
+	If strTicketProcess = "I" Then
+	    If bolLogging Then LogMessage "  This is about an Incident"
+	    Set objFolder = ActiveSession.RequestFolders("Incidents")
+	ElseIf strTicketProcess = "SR" Then
+	    If bolLogging Then LogMessage "  This is about a ServiceRequest"
+	    Set objFolder = ActiveSession.RequestFolders("RequestFulfillment")
+	ElseIf strTicketProcess = "P" Then
+	    If bolLogging Then LogMessage "  This is about a Problem"
+	    Set objFolder = ActiveSession.RequestFolders("Problems")
+	ElseIf strTicketProcess = "RFC" Then
+	    If bolLogging Then LogMessage "  This is about an RFC"
+	    Set objFolder = ActiveSession.RequestFolders("RFCs")
+	ElseIf strTicketProcess = "SUB" Then
+	    If bolLogging Then LogMessage "  This is about an External Ticket"
+	    Set objFolder = ActiveSession.RequestFolders("ExternalTickets")
+	ElseIf strTicketProcess = "C" Then
+	    If bolLogging Then LogMessage "  This is about a Call Ticket"
+	    Set objFolder = ActiveSession.RequestFolders("CallTickets")
+	    bolRecursive = True
+	Else
+	    'Ticket matches regular expression for strPattern, but not a regular expression for process
+	    GetTicket = Array(0, 0)
+	    Exit Function
+	End If
+
+	Set objFilter = objFolder.MakeFilter
+
+	On Error Resume Next
+
+	objFilter.UserField("Number") = CLng(strNumber)
+	If Err.Number <> 0 Then 
+		bolError = True
+	End If
+	On Error Goto 0
+
+	If Not bolError Then
+		Dim objTickets
+		Set objTickets = objFolder.Search(objFilter, bolRecursive)
+
+		intCount = objTickets.Count
+		If intCount > 0 Then intOutput = objTickets(0).UniqueId
+	End If	
+    End If
+
+    GetTicket = Array(intCount, intOutput)
+End Function 'GetTicket
