@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "OMNITRACKER Category Tree – three-level hierarchy for Incident, Service Request, and Change routing",
+  "version": "1.0.0",
+  "categories": [
+    {
+      "id": "DOM-001",
+      "name": "IT Infrastructure",
+      "level": 1,
+      "children": [
+        {
+          "id": "CAT-NET",
+          "name": "Network",
+          "level": 2,
+          "defaultGroup": "Network Team",
+          "escalationGroup": "Network Lead",
+          "slaHours": 8,
+          "autoCloseHours": 72,
+          "children": [
+            { "id": "SYM-NET-001", "name": "No internet access",       "type": "Incident", "level": 3 },
+            { "id": "SYM-NET-002", "name": "VPN not connecting",        "type": "Incident", "level": 3 },
+            { "id": "SYM-NET-003", "name": "Slow network performance",  "type": "Incident", "level": 3 },
+            { "id": "SYM-NET-004", "name": "Wi-Fi issues",              "type": "Incident", "level": 3 },
+            { "id": "SVC-NET-001", "name": "VPN Account Setup",         "type": "ServiceRequest", "catalogRef": "SVC-NET-001", "level": 3 },
+            { "id": "SVC-NET-002", "name": "Network Port Activation",   "type": "ServiceRequest", "catalogRef": "SVC-NET-002", "level": 3 }
+          ]
+        },
+        {
+          "id": "CAT-SRV",
+          "name": "Server",
+          "level": 2,
+          "defaultGroup": "Server Team",
+          "escalationGroup": "Server Lead",
+          "slaHours": 16,
+          "autoCloseHours": 72,
+          "children": [
+            { "id": "SYM-SRV-001", "name": "Server unreachable",         "type": "Incident", "level": 3 },
+            { "id": "SYM-SRV-002", "name": "Server high CPU / memory",   "type": "Incident", "level": 3 },
+            { "id": "SYM-SRV-003", "name": "Disk full",                  "type": "Incident", "level": 3 },
+            { "id": "SVC-SRV-001", "name": "New Virtual Server",         "type": "ServiceRequest", "catalogRef": "SVC-SRV-001", "level": 3 },
+            { "id": "SVC-SRV-002", "name": "Server Storage Extension",   "type": "ServiceRequest", "catalogRef": "SVC-SRV-002", "level": 3 },
+            { "id": "SVC-SRV-003", "name": "Server Decommission",        "type": "ServiceRequest", "catalogRef": "SVC-SRV-003", "level": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DOM-002",
+      "name": "End-User Computing",
+      "level": 1,
+      "children": [
+        {
+          "id": "CAT-HW",
+          "name": "Hardware",
+          "level": 2,
+          "defaultGroup": "Workplace Team",
+          "escalationGroup": "Workplace Lead",
+          "slaHours": 8,
+          "autoCloseHours": 72,
+          "children": [
+            { "id": "SYM-HW-001", "name": "Device not starting",       "type": "Incident", "level": 3 },
+            { "id": "SYM-HW-002", "name": "Keyboard / mouse failure",  "type": "Incident", "level": 3 },
+            { "id": "SYM-HW-003", "name": "Monitor issue",             "type": "Incident", "level": 3 },
+            { "id": "SVC-EUC-001", "name": "New Laptop Setup",         "type": "ServiceRequest", "catalogRef": "SVC-EUC-001", "level": 3 },
+            { "id": "SVC-EUC-003", "name": "Mobile Device Setup",      "type": "ServiceRequest", "catalogRef": "SVC-EUC-003", "level": 3 },
+            { "id": "SVC-EUC-004", "name": "Printer Setup",            "type": "ServiceRequest", "catalogRef": "SVC-EUC-004", "level": 3 }
+          ]
+        },
+        {
+          "id": "CAT-SW",
+          "name": "Software",
+          "level": 2,
+          "defaultGroup": "Workplace Team",
+          "escalationGroup": "Workplace Lead",
+          "slaHours": 8,
+          "autoCloseHours": 72,
+          "children": [
+            { "id": "SYM-SW-001", "name": "Application crash",         "type": "Incident", "level": 3 },
+            { "id": "SYM-SW-002", "name": "Application not starting",  "type": "Incident", "level": 3 },
+            { "id": "SYM-SW-003", "name": "License error",             "type": "Incident", "level": 3 },
+            { "id": "SVC-EUC-002", "name": "Software Installation",    "type": "ServiceRequest", "catalogRef": "SVC-EUC-002", "level": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DOM-003",
+      "name": "Business Applications",
+      "level": 1,
+      "children": [
+        {
+          "id": "CAT-SAP",
+          "name": "SAP",
+          "level": 2,
+          "defaultGroup": "SAP Team",
+          "escalationGroup": "SAP Lead",
+          "slaHours": 8,
+          "autoCloseHours": 72,
+          "children": [
+            { "id": "SYM-SAP-001", "name": "SAP login error",            "type": "Incident", "level": 3 },
+            { "id": "SYM-SAP-002", "name": "SAP transaction dump",       "type": "Incident", "level": 3 },
+            { "id": "SYM-SAP-003", "name": "SAP performance issue",      "type": "Incident", "level": 3 },
+            { "id": "SVC-SAP-001", "name": "SAP Role Request",           "type": "ServiceRequest", "catalogRef": "SVC-SAP-001", "level": 3 },
+            { "id": "SVC-SAP-002", "name": "SAP Password Reset",         "type": "ServiceRequest", "catalogRef": "SVC-SAP-002", "level": 3 }
+          ]
+        },
+        {
+          "id": "CAT-M365",
+          "name": "Microsoft 365",
+          "level": 2,
+          "defaultGroup": "M365 Team",
+          "escalationGroup": "M365 Lead",
+          "slaHours": 4,
+          "autoCloseHours": 72,
+          "children": [
+            { "id": "SYM-M365-001", "name": "Outlook not sending",              "type": "Incident", "level": 3 },
+            { "id": "SYM-M365-002", "name": "Teams audio / video issues",       "type": "Incident", "level": 3 },
+            { "id": "SYM-M365-003", "name": "SharePoint access error",          "type": "Incident", "level": 3 },
+            { "id": "SYM-M365-004", "name": "OneDrive sync failure",            "type": "Incident", "level": 3 },
+            { "id": "SVC-M365-001", "name": "Microsoft 365 License",            "type": "ServiceRequest", "catalogRef": "SVC-M365-001", "level": 3 },
+            { "id": "SVC-M365-002", "name": "Shared Mailbox Creation",          "type": "ServiceRequest", "catalogRef": "SVC-M365-002", "level": 3 },
+            { "id": "SVC-M365-003", "name": "Microsoft Teams Channel Setup",    "type": "ServiceRequest", "catalogRef": "SVC-M365-003", "level": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DOM-004",
+      "name": "Access & Identity",
+      "level": 1,
+      "children": [
+        {
+          "id": "CAT-IAM",
+          "name": "Identity Management",
+          "level": 2,
+          "defaultGroup": "IAM Team",
+          "escalationGroup": "IAM Lead",
+          "slaHours": 4,
+          "autoCloseHours": 48,
+          "children": [
+            { "id": "SYM-IAM-001", "name": "Account locked",                 "type": "Incident", "level": 3 },
+            { "id": "SYM-IAM-002", "name": "Cannot log in",                  "type": "Incident", "level": 3 },
+            { "id": "SYM-IAM-003", "name": "Access denied to resource",      "type": "Incident", "level": 3 },
+            { "id": "SVC-IAM-001", "name": "New User Account",               "type": "ServiceRequest", "catalogRef": "SVC-IAM-001", "level": 3 },
+            { "id": "SVC-IAM-002", "name": "Account Modification",           "type": "ServiceRequest", "catalogRef": "SVC-IAM-002", "level": 3 },
+            { "id": "SVC-IAM-003", "name": "Account Deactivation",           "type": "ServiceRequest", "catalogRef": "SVC-IAM-003", "level": 3 },
+            { "id": "SVC-IAM-004", "name": "Privileged Access Request",      "type": "ServiceRequest", "catalogRef": "SVC-IAM-004", "level": 3 },
+            { "id": "SVC-IAM-005", "name": "Password Reset",                 "type": "ServiceRequest", "catalogRef": "SVC-IAM-005", "level": 3 }
+          ]
+        }
+      ]
+    }
+  ]
+}
