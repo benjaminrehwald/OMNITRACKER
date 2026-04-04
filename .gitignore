@@ -1,0 +1,15 @@
+# Configuration with secrets
+config/config.json
+
+# PowerShell logs
+*.log
+
+# Windows artifacts
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
